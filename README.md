@@ -2,6 +2,11 @@
 
 An empathetic, ethically designed AI companion web application built to support student mental health, especially for international and university students adjusting to new environments.
 
+## 🚀 Deployment Status
+- **Azure Resources**: ✅ Deployed to `mind-ease` resource group
+- **GitHub Secrets**: ✅ Configured
+- **Application**: 🔄 Deploying to Azure Static Web Apps...
+
 ## Project Structure
 
 ```
