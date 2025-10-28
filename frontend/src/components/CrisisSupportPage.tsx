@@ -31,7 +31,7 @@ import {
   Web as WebIcon,
   LocationOn as LocationIcon,
   Schedule as ScheduleIcon,
-  Emergency as EmergencyIcon,
+  LocalHospital as EmergencyIcon,
   Close as CloseIcon,
   ExpandMore as ExpandMoreIcon,
   Favorite as HeartIcon,

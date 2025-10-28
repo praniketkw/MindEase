@@ -13,7 +13,7 @@ import {
   Chat as ChatIcon,
   Book as JournalIcon,
   Settings as SettingsIcon,
-  Emergency as EmergencyIcon,
+  LocalHospital as EmergencyIcon,
   Person as PersonIcon,
   Psychology as CheckInIcon,
   TrendingUp as MoodIcon,
