@@ -6,16 +6,13 @@ import {
   Grid,
   Card,
   CardContent,
-  CardActions,
   Switch,
   FormControlLabel,
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
   Button,
   TextField,
-  Divider,
   Alert,
   Dialog,
   DialogTitle,
@@ -31,18 +28,50 @@ import {
 import {
   Security as SecurityIcon,
   VolumeUp as VolumeIcon,
-  Language as LanguageIcon,
   Schedule as ScheduleIcon,
-  Psychology as StyleIcon,
   Download as ExportIcon,
   DeleteForever as DeleteIcon,
   Shield as PrivacyIcon,
-  Notifications as NotificationIcon,
-  Palette as ThemeIcon,
-  Accessibility as AccessibilityIcon,
 } from '@mui/icons-material';
 import { SettingsProps } from '../interfaces/components';
 import { UserProfile, UserPreferences } from '../types';
+
+// Define proper types for settings
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+interface BaseSetting {
+  key: keyof UserPreferences;
+  label: string;
+  description: string;
+}
+
+interface SwitchSetting extends BaseSetting {
+  type: 'switch';
+  value: boolean;
+}
+
+interface SelectSetting extends BaseSetting {
+  type: 'select';
+  value: string;
+  options: SelectOption[];
+}
+
+interface TextSetting extends BaseSetting {
+  type: 'text';
+  value: string;
+  placeholder?: string;
+}
+
+type Setting = SwitchSetting | SelectSetting | TextSetting;
+
+interface SettingSection {
+  title: string;
+  icon: React.ReactNode;
+  settings: Setting[];
+}
 
 const SettingsPage: React.FC<SettingsProps> = ({
   userProfile,
@@ -55,25 +84,18 @@ const SettingsPage: React.FC<SettingsProps> = ({
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetConfirmation, setResetConfirmation] = useState('');
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [crisisContact, setCrisisContact] = useState(userProfile.preferences.crisisContactInfo || '');
 
   const handlePreferenceChange = (key: keyof UserPreferences, value: any) => {
     const updatedPreferences = { ...preferences, [key]: value };
     setPreferences(updatedPreferences);
     
     const updatedProfile: Partial<UserProfile> = {
-      ...userProfile,
       preferences: updatedPreferences,
     };
     
     onUpdateProfile(updatedProfile);
     setShowSuccessAlert(true);
     setTimeout(() => setShowSuccessAlert(false), 3000);
-  };
-
-  const handleCrisisContactChange = (contact: string) => {
-    setCrisisContact(contact);
-    handlePreferenceChange('crisisContactInfo', contact);
   };
 
   const handleResetData = () => {
@@ -84,7 +106,7 @@ const SettingsPage: React.FC<SettingsProps> = ({
     }
   };
 
-  const settingSections = [
+  const settingSections: SettingSection[] = [
     {
       title: 'Communication Preferences',
       icon: <VolumeIcon />,
@@ -95,7 +117,7 @@ const SettingsPage: React.FC<SettingsProps> = ({
           description: 'Enable voice recording and text-to-speech features',
           type: 'switch',
           value: preferences.voiceEnabled,
-        },
+        } as SwitchSetting,
         {
           key: 'language',
           label: 'Language',
@@ -109,7 +131,7 @@ const SettingsPage: React.FC<SettingsProps> = ({
             { value: 'de', label: 'Deutsch' },
             { value: 'zh', label: '中文' },
           ],
-        },
+        } as SelectSetting,
         {
           key: 'communicationStyle',
           label: 'Communication Style',
@@ -120,7 +142,7 @@ const SettingsPage: React.FC<SettingsProps> = ({
             { value: 'casual', label: 'Casual & Friendly' },
             { value: 'formal', label: 'Professional & Formal' },
           ],
-        },
+        } as SelectSetting,
       ],
     },
     {
@@ -138,7 +160,7 @@ const SettingsPage: React.FC<SettingsProps> = ({
             { value: 'weekly', label: 'Weekly' },
             { value: 'custom', label: 'Custom Schedule' },
           ],
-        },
+        } as SelectSetting,
       ],
     },
     {
@@ -150,12 +172,62 @@ const SettingsPage: React.FC<SettingsProps> = ({
           label: 'Emergency Contact',
           description: 'Optional: Add a trusted contact for crisis situations',
           type: 'text',
-          value: crisisContact,
+          value: preferences.crisisContactInfo || '',
           placeholder: 'Phone number or email (optional)',
-        },
+        } as TextSetting,
       ],
     },
   ];
+
+  const renderSettingControl = (setting: Setting) => {
+    switch (setting.type) {
+      case 'switch':
+        return (
+          <FormControlLabel
+            control={
+              <Switch
+                checked={setting.value}
+                onChange={(e) => handlePreferenceChange(setting.key, e.target.checked)}
+                disabled={isLoading}
+              />
+            }
+            label=""
+          />
+        );
+      
+      case 'select':
+        return (
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <Select
+              value={setting.value}
+              onChange={(e) => handlePreferenceChange(setting.key, e.target.value)}
+              disabled={isLoading}
+            >
+              {setting.options.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        );
+      
+      case 'text':
+        return (
+          <TextField
+            size="small"
+            value={setting.value}
+            onChange={(e) => handlePreferenceChange(setting.key, e.target.value)}
+            placeholder={setting.placeholder}
+            disabled={isLoading}
+            sx={{ minWidth: 200 }}
+          />
+        );
+      
+      default:
+        return null;
+    }
+  };
 
   return (
     <Box sx={{ maxWidth: '1000px', mx: 'auto', p: 2 }}>
@@ -197,49 +269,7 @@ const SettingsPage: React.FC<SettingsProps> = ({
                         secondary={setting.description}
                       />
                       <ListItemSecondaryAction>
-                        {setting.type === 'switch' && (
-                          <FormControlLabel
-                            control={
-                              <Switch
-                                checked={setting.value as boolean}
-                                onChange={(e) => handlePreferenceChange(setting.key as keyof UserPreferences, e.target.checked)}
-                                disabled={isLoading}
-                              />
-                            }
-                            label=""
-                          />
-                        )}
-                        
-                        {setting.type === 'select' && setting.options && (
-                          <FormControl size="small" sx={{ minWidth: 150 }}>
-                            <Select
-                              value={setting.value}
-                              onChange={(e) => handlePreferenceChange(setting.key as keyof UserPreferences, e.target.value)}
-                              disabled={isLoading}
-                            >
-                              {setting.options.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        )}
-                        
-                        {setting.type === 'text' && (
-                          <TextField
-                            size="small"
-                            value={setting.value}
-                            onChange={(e) => {
-                              if (setting.key === 'crisisContactInfo') {
-                                handleCrisisContactChange(e.target.value);
-                              }
-                            }}
-                            placeholder={setting.placeholder}
-                            disabled={isLoading}
-                            sx={{ minWidth: 200 }}
-                          />
-                        )}
+                        {renderSettingControl(setting)}
                       </ListItemSecondaryAction>
                     </ListItem>
                   ))}
