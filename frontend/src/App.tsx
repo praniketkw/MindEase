@@ -136,7 +136,11 @@ const App: React.FC = () => {
               element={
                 <SettingsPage
                   userProfile={userProfile}
-                  onUpdateProfile={setUserProfile}
+                  onUpdateProfile={(updates) => {
+                    if (userProfile) {
+                      setUserProfile({ ...userProfile, ...updates });
+                    }
+                  }}
                   onResetData={() => {}}
                   onExportData={() => {}}
                   isLoading={false}
