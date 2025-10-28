@@ -99,40 +99,40 @@ const App: React.FC = () => {
   return (
     <Router>
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <Navigation 
+        <Navigation
           currentPage={currentPage}
           onNavigate={handleNavigate}
           userProfile={userProfile}
         />
-        
+
         <Container maxWidth="lg" sx={{ flex: 1, py: 2 }}>
           <Routes>
-            <Route 
-              path="/chat" 
+            <Route
+              path="/chat"
               element={
                 <ChatInterface
                   messages={messages}
                   onSendMessage={handleSendMessage}
                   isLoading={false}
                   voiceEnabled={userProfile.preferences.voiceEnabled}
-                  onToggleVoice={() => {}}
+                  onToggleVoice={() => { }}
                 />
-              } 
+              }
             />
-            <Route 
-              path="/journal" 
+            <Route
+              path="/journal"
               element={
                 <JournalingInterface
                   entries={[]}
-                  onCreateEntry={() => {}}
-                  onViewInsights={() => {}}
-                  onDeleteEntry={() => {}}
+                  onCreateEntry={() => { }}
+                  onViewInsights={() => { }}
+                  onDeleteEntry={() => { }}
                   isLoading={false}
                 />
-              } 
+              }
             />
-            <Route 
-              path="/settings" 
+            <Route
+              path="/settings"
               element={
                 <SettingsPage
                   userProfile={userProfile}
@@ -141,25 +141,25 @@ const App: React.FC = () => {
                       setUserProfile({ ...userProfile, ...updates });
                     }
                   }}
-                  onResetData={() => {}}
-                  onExportData={() => {}}
+                  onResetData={() => { }}
+                  onExportData={() => { }}
                   isLoading={false}
                 />
-              } 
+              }
             />
-            <Route 
-              path="/crisis-support" 
+            <Route
+              path="/crisis-support"
               element={
                 <CrisisSupportPage
                   isVisible={true}
                   onClose={() => handleNavigate('chat')}
                   emergencyResources={[]}
-                  onContactResource={() => {}}
+                  onContactResource={() => { }}
                 />
-              } 
+              }
             />
-            <Route 
-              path="/check-in" 
+            <Route
+              path="/check-in"
               element={
                 <CheckInInterface
                   userId={userProfile.id}
@@ -167,16 +167,16 @@ const App: React.FC = () => {
                   onClose={() => handleNavigate('chat')}
                   triggeredBy={checkInTrigger}
                 />
-              } 
+              }
             />
-            <Route 
-              path="/mood-patterns" 
+            <Route
+              path="/mood-patterns"
               element={
                 <MoodPatternChart
                   userId={userProfile.id}
                   onCheckInRequested={() => handleCheckInRequest('manual')}
                 />
-              } 
+              }
             />
             <Route path="/" element={<Navigate to="/chat" replace />} />
           </Routes>

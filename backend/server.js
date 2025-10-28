@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { OpenAI } = require('openai');
 require('dotenv').config();
 
 const app = express();
@@ -59,101 +60,146 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Chat endpoint with Azure OpenAI integration
+// Initialize Azure OpenAI client
+let openaiClient = null;
+
+if (process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_API_KEY) {
+  openaiClient = new OpenAI({
+    apiKey: process.env.AZURE_OPENAI_API_KEY,
+    baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT_NAME}`,
+    defaultQuery: { 'api-version': '2024-02-15-preview' },
+    defaultHeaders: {
+      'api-key': process.env.AZURE_OPENAI_API_KEY,
+    },
+  });
+  console.log('✅ Azure OpenAI client initialized');
+} else {
+  console.log('⚠️ Azure OpenAI not configured - missing environment variables');
+}
+
+// Chat endpoint with real Azure OpenAI integration
 app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
     
     console.log('📨 Received message:', message);
-    console.log('🔑 Azure OpenAI Endpoint:', process.env.AZURE_OPENAI_ENDPOINT);
-    
-    // Check if Azure OpenAI is configured
-    if (!process.env.AZURE_OPENAI_ENDPOINT || !process.env.AZURE_OPENAI_API_KEY) {
-      console.log('⚠️ Azure OpenAI not configured, using mock response');
-      
-      const mockResponses = [
-        "I understand you're going through a difficult time. Can you tell me more about what's on your mind?",
-        "Thank you for sharing that with me. It takes courage to open up about your feelings.",
-        "I'm here to listen and support you. What would be most helpful for you right now?",
-        "It sounds like you're dealing with a lot. Remember that it's okay to take things one step at a time.",
-        "Your feelings are valid, and you don't have to go through this alone."
-      ];
-      
-      const response = mockResponses[Math.floor(Math.random() * mockResponses.length)];
-      
-      return res.json({
-        response: response,
-        crisisDetected: false,
-        suggestedActions: [],
-        source: 'mock'
+    console.log('🔧 Environment check:', {
+      hasEndpoint: !!process.env.AZURE_OPENAI_ENDPOINT,
+      hasApiKey: !!process.env.AZURE_OPENAI_API_KEY,
+      hasDeployment: !!process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+      endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+      deployment: process.env.AZURE_OPENAI_DEPLOYMENT_NAME
+    });
+
+    if (!message || message.trim() === '') {
+      return res.status(400).json({
+        error: 'Message is required',
+        source: 'validation_error'
       });
     }
 
-    // Make actual Azure OpenAI API call
-    const azureResponse = await fetch(`${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT_NAME}/chat/completions?api-version=2024-02-15-preview`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': process.env.AZURE_OPENAI_API_KEY
-      },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: 'system',
-            content: 'You are MindEase, an empathetic AI mental health support assistant. Provide compassionate, supportive responses. If you detect crisis language, acknowledge it seriously and suggest professional help.'
-          },
-          {
-            role: 'user',
-            content: message
-          }
-        ],
-        max_tokens: 500,
-        temperature: 0.7
-      })
-    });
-
-    console.log('🌐 Azure OpenAI Response Status:', azureResponse.status);
-
-    if (!azureResponse.ok) {
-      const errorText = await azureResponse.text();
-      console.error('❌ Azure OpenAI Error:', errorText);
-      throw new Error(`Azure OpenAI API error: ${azureResponse.status}`);
+    // If Azure OpenAI is not configured, return error instead of mock
+    if (!openaiClient) {
+      console.log('❌ Azure OpenAI client not available');
+      return res.status(503).json({
+        error: 'AI service is not configured. Please check Azure OpenAI settings.',
+        source: 'configuration_error',
+        details: 'Missing Azure OpenAI environment variables'
+      });
     }
 
-    const azureData = await azureResponse.json();
-    console.log('✅ Azure OpenAI Response:', JSON.stringify(azureData, null, 2));
+    console.log('🚀 Making Azure OpenAI API call...');
 
-    const aiResponse = azureData.choices[0].message.content;
+    // Make the actual Azure OpenAI API call
+    const completion = await openaiClient.chat.completions.create({
+      model: process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: `You are MindEase, a compassionate AI mental health support assistant. Your role is to:
+          
+          1. Provide empathetic, personalized responses to each user's unique situation
+          2. Listen actively and validate their feelings
+          3. Offer practical coping strategies when appropriate
+          4. Recognize signs of crisis and respond appropriately
+          5. Maintain a warm, supportive, and non-judgmental tone
+          
+          Guidelines:
+          - Always acknowledge the person's feelings as valid
+          - Provide specific, actionable advice when requested
+          - If someone mentions self-harm, suicide, or crisis, take it seriously and suggest professional help
+          - Adapt your language and approach to match the user's communication style
+          - Be genuine and avoid generic responses
+          
+          Remember: You are not a replacement for professional therapy, but a supportive companion on their mental health journey.`
+        },
+        {
+          role: 'user',
+          content: message
+        }
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+      top_p: 0.9,
+      frequency_penalty: 0.1,
+      presence_penalty: 0.1
+    });
+
+    console.log('✅ Azure OpenAI API call successful');
+    console.log('📊 Usage:', completion.usage);
+
+    const aiResponse = completion.choices[0].message.content;
     
-    // Simple crisis detection
-    const crisisKeywords = ['suicide', 'kill myself', 'end it all', 'hurt myself', 'die'];
+    // Enhanced crisis detection
+    const crisisKeywords = [
+      'suicide', 'kill myself', 'end it all', 'hurt myself', 'die', 'death',
+      'self-harm', 'cutting', 'overdose', 'jump', 'hanging', 'worthless',
+      'hopeless', 'no point', 'better off dead', 'end my life'
+    ];
+    
     const crisisDetected = crisisKeywords.some(keyword => 
       message.toLowerCase().includes(keyword)
     );
 
     if (crisisDetected) {
-      console.log('🚨 Crisis detected in message');
+      console.log('🚨 CRISIS DETECTED in message:', message);
     }
 
-    res.json({
+    const response = {
       response: aiResponse,
       crisisDetected: crisisDetected,
-      suggestedActions: crisisDetected ? ['Contact 988 Suicide & Crisis Lifeline'] : [],
+      suggestedActions: crisisDetected ? [
+        'Contact 988 Suicide & Crisis Lifeline immediately',
+        'Reach out to a trusted friend or family member',
+        'Contact your local emergency services if in immediate danger'
+      ] : [],
+      source: 'azure_openai',
+      timestamp: new Date().toISOString(),
+      usage: completion.usage
+    };
+
+    console.log('📤 Sending response:', {
+      responseLength: aiResponse.length,
+      crisisDetected,
       source: 'azure_openai'
     });
 
+    res.json(response);
+
   } catch (error) {
-    console.error('💥 Chat API Error:', error);
+    console.error('💥 Chat API Error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     
-    // Fallback to mock response on error
-    const fallbackResponse = "I'm here to support you. I'm experiencing some technical difficulties right now, but please know that your feelings matter and help is available.";
-    
-    res.json({
-      response: fallbackResponse,
-      crisisDetected: false,
-      suggestedActions: ['Contact 988 if you need immediate support'],
-      source: 'fallback',
-      error: error.message
+    // Return error instead of fallback
+    res.status(500).json({
+      error: 'Failed to get AI response',
+      details: error.message,
+      source: 'api_error',
+      timestamp: new Date().toISOString(),
+      suggestion: 'Please try again in a moment. If the issue persists, contact support.'
     });
   }
 });
