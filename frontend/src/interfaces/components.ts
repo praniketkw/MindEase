@@ -1,6 +1,6 @@
 // Frontend Component Interfaces for MindEase
 
-import { Message, EmotionalAnalysis, JournalEntry, UserProfile, CopingStrategy } from '../../../shared/types';
+import { Message, EmotionalAnalysis, JournalEntry, UserProfile, CopingStrategy } from '../types';
 
 // Chat Interface Component Props
 export interface ChatInterfaceProps {

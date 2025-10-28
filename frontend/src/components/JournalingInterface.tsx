@@ -29,7 +29,7 @@ import {
   DateRange as DateRangeIcon,
 } from '@mui/icons-material';
 import { JournalingProps } from '../interfaces/components';
-import { JournalEntry } from '../../../shared/types';
+import { JournalEntry } from '../types';
 import VoiceInterface from './VoiceInterface';
 import EmotionalInsightsChart from './EmotionalInsightsChart';
 

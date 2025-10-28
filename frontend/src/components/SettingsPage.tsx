@@ -42,7 +42,7 @@ import {
   Accessibility as AccessibilityIcon,
 } from '@mui/icons-material';
 import { SettingsProps } from '../interfaces/components';
-import { UserProfile, UserPreferences } from '../../../shared/types';
+import { UserProfile, UserPreferences } from '../types';
 
 const SettingsPage: React.FC<SettingsProps> = ({
   userProfile,

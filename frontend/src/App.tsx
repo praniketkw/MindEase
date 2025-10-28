@@ -8,7 +8,7 @@ import CrisisSupportPage from './components/CrisisSupportPage';
 import CheckInInterface from './components/CheckInInterface';
 import MoodPatternChart from './components/MoodPatternChart';
 import Navigation from './components/Navigation';
-import { Message, UserProfile } from '../../shared/types';
+import { Message, UserProfile } from './types';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('chat');
