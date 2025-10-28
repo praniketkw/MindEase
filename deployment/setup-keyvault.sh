@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-RESOURCE_GROUP_NAME="mindease-rg"
+RESOURCE_GROUP_NAME="mind-ease"
 KEY_VAULT_NAME=""
 SERVICE_PRINCIPAL_NAME="mindease-sp"
 

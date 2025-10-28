@@ -6,11 +6,11 @@
 set -e
 
 # Configuration
-RESOURCE_GROUP_NAME="mindease-rg"
-LOCATION="eastus"
+RESOURCE_GROUP_NAME="mind-ease"
+LOCATION="eastus2"
 DEPLOYMENT_NAME="mindease-deployment-$(date +%Y%m%d-%H%M%S)"
 TEMPLATE_FILE="azure-resources.json"
-GITHUB_REPO_URL=""
+GITHUB_REPO_URL="https://github.com/praniketkw/MindEase.git"
 
 # Colors for output
 RED='\033[0;31m'

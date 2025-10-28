@@ -6,8 +6,8 @@
 set -e
 
 # Configuration variables
-RESOURCE_GROUP_NAME="mindease-rg"
-LOCATION="eastus"
+RESOURCE_GROUP_NAME="mind-ease"
+LOCATION="eastus2"
 APP_NAME="mindease-app"
 KEY_VAULT_NAME="mindease-kv-$(date +%s)"
 STORAGE_ACCOUNT_NAME="mindeasestorage$(date +%s | tail -c 6)"
