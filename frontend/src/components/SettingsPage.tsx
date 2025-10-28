@@ -210,7 +210,7 @@ const SettingsPage: React.FC<SettingsProps> = ({
                           />
                         )}
                         
-                        {setting.type === 'select' && 'options' in setting && (
+                        {setting.type === 'select' && setting.options && (
                           <FormControl size="small" sx={{ minWidth: 150 }}>
                             <Select
                               value={setting.value}
