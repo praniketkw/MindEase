@@ -210,14 +210,14 @@ const SettingsPage: React.FC<SettingsProps> = ({
                           />
                         )}
                         
-                        {setting.type === 'select' && (
+                        {setting.type === 'select' && 'options' in setting && (
                           <FormControl size="small" sx={{ minWidth: 150 }}>
                             <Select
                               value={setting.value}
                               onChange={(e) => handlePreferenceChange(setting.key as keyof UserPreferences, e.target.value)}
                               disabled={isLoading}
                             >
-                              {setting.options?.map((option) => (
+                              {setting.options.map((option) => (
                                 <MenuItem key={option.value} value={option.value}>
                                   {option.label}
                                 </MenuItem>
