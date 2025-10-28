@@ -59,31 +59,101 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Mock chat endpoint
-app.post('/api/chat', (req, res) => {
+// Chat endpoint with Azure OpenAI integration
+app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
     
-    // Simple mock response
-    const responses = [
-      "I understand you're going through a difficult time. Can you tell me more about what's on your mind?",
-      "Thank you for sharing that with me. It takes courage to open up about your feelings.",
-      "I'm here to listen and support you. What would be most helpful for you right now?",
-      "It sounds like you're dealing with a lot. Remember that it's okay to take things one step at a time.",
-      "Your feelings are valid, and you don't have to go through this alone."
-    ];
+    console.log('📨 Received message:', message);
+    console.log('🔑 Azure OpenAI Endpoint:', process.env.AZURE_OPENAI_ENDPOINT);
     
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+    // Check if Azure OpenAI is configured
+    if (!process.env.AZURE_OPENAI_ENDPOINT || !process.env.AZURE_OPENAI_API_KEY) {
+      console.log('⚠️ Azure OpenAI not configured, using mock response');
+      
+      const mockResponses = [
+        "I understand you're going through a difficult time. Can you tell me more about what's on your mind?",
+        "Thank you for sharing that with me. It takes courage to open up about your feelings.",
+        "I'm here to listen and support you. What would be most helpful for you right now?",
+        "It sounds like you're dealing with a lot. Remember that it's okay to take things one step at a time.",
+        "Your feelings are valid, and you don't have to go through this alone."
+      ];
+      
+      const response = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+      
+      return res.json({
+        response: response,
+        crisisDetected: false,
+        suggestedActions: [],
+        source: 'mock'
+      });
+    }
+
+    // Make actual Azure OpenAI API call
+    const azureResponse = await fetch(`${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT_NAME}/chat/completions?api-version=2024-02-15-preview`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': process.env.AZURE_OPENAI_API_KEY
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: 'system',
+            content: 'You are MindEase, an empathetic AI mental health support assistant. Provide compassionate, supportive responses. If you detect crisis language, acknowledge it seriously and suggest professional help.'
+          },
+          {
+            role: 'user',
+            content: message
+          }
+        ],
+        max_tokens: 500,
+        temperature: 0.7
+      })
+    });
+
+    console.log('🌐 Azure OpenAI Response Status:', azureResponse.status);
+
+    if (!azureResponse.ok) {
+      const errorText = await azureResponse.text();
+      console.error('❌ Azure OpenAI Error:', errorText);
+      throw new Error(`Azure OpenAI API error: ${azureResponse.status}`);
+    }
+
+    const azureData = await azureResponse.json();
+    console.log('✅ Azure OpenAI Response:', JSON.stringify(azureData, null, 2));
+
+    const aiResponse = azureData.choices[0].message.content;
+    
+    // Simple crisis detection
+    const crisisKeywords = ['suicide', 'kill myself', 'end it all', 'hurt myself', 'die'];
+    const crisisDetected = crisisKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword)
+    );
+
+    if (crisisDetected) {
+      console.log('🚨 Crisis detected in message');
+    }
+
+    res.json({
+      response: aiResponse,
+      crisisDetected: crisisDetected,
+      suggestedActions: crisisDetected ? ['Contact 988 Suicide & Crisis Lifeline'] : [],
+      source: 'azure_openai'
+    });
+
+  } catch (error) {
+    console.error('💥 Chat API Error:', error);
+    
+    // Fallback to mock response on error
+    const fallbackResponse = "I'm here to support you. I'm experiencing some technical difficulties right now, but please know that your feelings matter and help is available.";
     
     res.json({
-      response: randomResponse,
+      response: fallbackResponse,
       crisisDetected: false,
-      suggestedActions: []
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: 'Failed to process message',
-      message: 'Please try again later'
+      suggestedActions: ['Contact 988 if you need immediate support'],
+      source: 'fallback',
+      error: error.message
     });
   }
 });
