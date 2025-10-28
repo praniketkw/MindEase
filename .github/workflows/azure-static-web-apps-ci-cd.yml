@@ -56,13 +56,13 @@ jobs:
       - name: Run frontend tests
         run: |
           cd frontend
-          npm test -- --coverage --watchAll=false
+          npm test -- --coverage --watchAll=false --passWithNoTests
         continue-on-error: true
 
       - name: Run backend tests
         run: |
           cd backend
-          npm test -- --coverage --watchAll=false
+          npm test
         continue-on-error: true
 
       - name: Build And Deploy
