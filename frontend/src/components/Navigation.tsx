@@ -5,154 +5,157 @@ import {
   Typography,
   IconButton,
   Box,
-  Badge,
   Tooltip,
-  Avatar,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Chip,
 } from '@mui/material';
 import {
   Chat as ChatIcon,
-  Book as JournalIcon,
-  Settings as SettingsIcon,
   LocalHospital as EmergencyIcon,
-  Person as PersonIcon,
-  Psychology as CheckInIcon,
-  TrendingUp as MoodIcon,
+  MoreVert as MoreIcon,
+  DeleteForever as ClearIcon,
+  Info as InfoIcon,
+  Psychology as PsychologyIcon,
 } from '@mui/icons-material';
-import { NavigationProps } from '../interfaces/components';
+
+interface NavigationProps {
+  currentPage: string;
+  onNavigate: (page: string) => void;
+  unreadNotifications?: number;
+  userProfile: any;
+  onClearHistory?: () => void;
+}
 
 const Navigation: React.FC<NavigationProps> = ({
   currentPage,
   onNavigate,
-  unreadNotifications = 0,
-  userProfile,
+  onClearHistory,
 }) => {
-  const navigationItems = [
-    {
-      id: 'chat',
-      label: 'Chat',
-      icon: <ChatIcon />,
-      path: '/chat',
-    },
-    {
-      id: 'journal',
-      label: 'Journal',
-      icon: <JournalIcon />,
-      path: '/journal',
-    },
-    {
-      id: 'check-in',
-      label: 'Check-in',
-      icon: <CheckInIcon />,
-      path: '/check-in',
-    },
-    {
-      id: 'mood-patterns',
-      label: 'Mood Patterns',
-      icon: <MoodIcon />,
-      path: '/mood-patterns',
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: <SettingsIcon />,
-      path: '/settings',
-    },
-    {
-      id: 'crisis-support',
-      label: 'Crisis Support',
-      icon: <EmergencyIcon />,
-      path: '/crisis-support',
-      urgent: true,
-    },
-  ];
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
-  const handleNavigation = (itemId: string) => {
-    onNavigate(itemId);
-    // In a real app, you'd use React Router's navigate here
-    window.history.pushState({}, '', navigationItems.find(item => item.id === itemId)?.path || '/');
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleClearHistoryClick = () => {
+    handleMenuClose();
+    if (onClearHistory) {
+      onClearHistory();
+    }
+  };
+
+  const handleAboutClick = () => {
+    handleMenuClose();
+    alert('MindEase v2.0\n\nA privacy-first mental health companion powered by Anthropic Claude 3.5 Haiku.\n\nYour conversations are stored only on your device and never sent to our servers.\n\nIn crisis? Call 988 or text HOME to 741741.');
   };
 
   return (
-    <AppBar 
-      position="static" 
-      elevation={0}
-      sx={{ 
-        backgroundColor: 'white',
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
-      <Toolbar sx={{ justifyContent: 'space-between' }}>
-        {/* Logo and Title */}
+    <AppBar position="static" elevation={0} sx={{ bgcolor: 'white', borderBottom: '1px solid #e2e8f0' }}>
+      <Toolbar sx={{ justifyContent: 'space-between', py: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography
-            variant="h6"
-            component="div"
+          <Box
             sx={{
-              fontWeight: 'bold',
-              background: 'linear-gradient(135deg, #2196f3 0%, #21cbf3 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              width: 40,
+              height: 40,
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.25)',
             }}
           >
-            MindEase
-          </Typography>
+            <PsychologyIcon sx={{ color: 'white', fontSize: 24 }} />
+          </Box>
+          <Box>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 700, color: '#1a202c', letterSpacing: '-0.02em', fontSize: '1.25rem' }}>
+              MindEase
+            </Typography>
+            <Chip
+              label="Privacy-First"
+              size="small"
+              sx={{
+                height: 20,
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                bgcolor: '#dcfce7',
+                color: '#166534',
+                border: '1px solid #bbf7d0',
+              }}
+            />
+          </Box>
         </Box>
 
-        {/* Navigation Items */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {navigationItems.map((item) => (
-            <Tooltip key={item.id} title={item.label}>
-              <IconButton
-                onClick={() => handleNavigation(item.id)}
-                sx={{
-                  color: currentPage === item.id ? 'primary.main' : 'text.secondary',
-                  backgroundColor: currentPage === item.id ? 'primary.light' : 'transparent',
-                  '&:hover': {
-                    backgroundColor: item.urgent ? 'error.light' : 'primary.light',
-                    color: item.urgent ? 'error.main' : 'primary.main',
-                  },
-                  ...(item.urgent && {
-                    color: 'error.main',
-                    '&:hover': {
-                      backgroundColor: 'error.light',
-                    },
-                  }),
-                }}
-              >
-                {item.id === 'crisis-support' && unreadNotifications > 0 ? (
-                  <Badge badgeContent={unreadNotifications} color="error">
-                    {item.icon}
-                  </Badge>
-                ) : (
-                  item.icon
-                )}
-              </IconButton>
-            </Tooltip>
-          ))}
+          <Tooltip title="Chat" arrow>
+            <IconButton
+              onClick={() => onNavigate('chat')}
+              sx={{
+                color: currentPage === 'chat' ? '#6366f1' : '#64748b',
+                bgcolor: currentPage === 'chat' ? '#eef2ff' : 'transparent',
+                '&:hover': { bgcolor: '#f1f5f9' },
+              }}
+            >
+              <ChatIcon />
+            </IconButton>
+          </Tooltip>
 
-          {/* User Profile */}
-          {userProfile && (
-            <Tooltip title="User Profile">
-              <IconButton
-                sx={{
-                  ml: 2,
-                  color: 'text.secondary',
-                }}
-              >
-                <Avatar
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    backgroundColor: 'secondary.main',
-                  }}
-                >
-                  <PersonIcon fontSize="small" />
-                </Avatar>
-              </IconButton>
-            </Tooltip>
-          )}
+          <Tooltip title="Crisis Support - Available 24/7" arrow>
+            <IconButton
+              onClick={() => onNavigate('crisis-support')}
+              sx={{
+                color: '#dc2626',
+                bgcolor: currentPage === 'crisis-support' ? '#fee2e2' : '#fef2f2',
+                border: '1px solid #fecaca',
+                '&:hover': { bgcolor: '#fee2e2' },
+              }}
+            >
+              <EmergencyIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Menu" arrow>
+            <IconButton onClick={handleMenuOpen} sx={{ color: '#64748b', '&:hover': { bgcolor: '#f1f5f9' } }}>
+              <MoreIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{
+              sx: {
+                mt: 1,
+                borderRadius: 2,
+                minWidth: 200,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '1px solid #e2e8f0',
+              },
+            }}
+          >
+            <MenuItem onClick={handleClearHistoryClick}>
+              <ListItemIcon>
+                <ClearIcon fontSize="small" sx={{ color: '#dc2626' }} />
+              </ListItemIcon>
+              <ListItemText>Clear History</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={handleAboutClick}>
+              <ListItemIcon>
+                <InfoIcon fontSize="small" sx={{ color: '#6366f1' }} />
+              </ListItemIcon>
+              <ListItemText>About & Privacy</ListItemText>
+            </MenuItem>
+          </Menu>
         </Box>
       </Toolbar>
     </AppBar>

@@ -1,71 +1,39 @@
 import React from 'react';
-import { Box, Avatar, Paper } from '@mui/material';
-import { Psychology as PsychologyIcon } from '@mui/icons-material';
+import { Box } from '@mui/material';
 
 const TypingIndicator: React.FC = () => {
   return (
     <Box
       sx={{
         display: 'flex',
-        justifyContent: 'flex-start',
-        mb: 2,
-        alignItems: 'flex-start',
-        gap: 1,
+        gap: 0.75,
+        alignItems: 'center',
+        py: 0.5,
       }}
     >
-      <Avatar
-        sx={{
-          bgcolor: 'primary.main',
-          width: 32,
-          height: 32,
-          mt: 0.5,
-        }}
-      >
-        <PsychologyIcon fontSize="small" />
-      </Avatar>
-
-      <Paper
-        elevation={1}
-        sx={{
-          p: 2,
-          backgroundColor: 'white',
-          borderRadius: '20px 20px 20px 4px',
-          minWidth: '80px',
-        }}
-      >
+      {[0, 1, 2].map((index) => (
         <Box
+          key={index}
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            backgroundColor: '#6366f1',
+            animation: 'bounce 1.4s infinite ease-in-out',
+            animationDelay: `${index * 0.16}s`,
+            '@keyframes bounce': {
+              '0%, 80%, 100%': {
+                transform: 'scale(0.8)',
+                opacity: 0.5,
+              },
+              '40%': {
+                transform: 'scale(1.2)',
+                opacity: 1,
+              },
+            },
           }}
-        >
-          {[0, 1, 2].map((index) => (
-            <Box
-              key={index}
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                backgroundColor: 'primary.main',
-                opacity: 0.4,
-                animation: 'typing 1.4s ease-in-out infinite',
-                animationDelay: `${index * 0.2}s`,
-                '@keyframes typing': {
-                  '0%, 60%, 100%': {
-                    transform: 'translateY(0)',
-                    opacity: 0.4,
-                  },
-                  '30%': {
-                    transform: 'translateY(-10px)',
-                    opacity: 1,
-                  },
-                },
-              }}
-            />
-          ))}
-        </Box>
-      </Paper>
+        />
+      ))}
     </Box>
   );
 };

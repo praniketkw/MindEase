@@ -1,5 +1,3 @@
-// Backend types for MindEase application
-
 export interface Message {
   id: string;
   content: string;
@@ -8,30 +6,18 @@ export interface Message {
   type: 'text' | 'voice';
 }
 
-export interface UserProfile {
-  id: string;
-  createdAt: Date;
-  preferences: UserPreferences;
-}
-
-export interface UserPreferences {
-  voiceEnabled: boolean;
-  language: string;
-  checkInFrequency: 'daily' | 'weekly' | 'custom';
-  communicationStyle: 'formal' | 'casual';
-  crisisContactInfo?: string;
-}
-
-export interface ConversationResponse {
+export interface ChatResponse {
   response: string;
   crisisDetected: boolean;
-  suggestedActions: string[];
+  crisisLevel: 'none' | 'low' | 'medium' | 'high' | 'critical';
+  suggestedResources?: any[];
+  timestamp: string;
 }
 
-export interface EmergencyResource {
-  name: string;
-  phone: string;
-  website?: string;
-  description: string;
-  availability: string;
+export interface CrisisCheckResponse {
+  isCrisis: boolean;
+  level: 'none' | 'low' | 'medium' | 'high' | 'critical';
+  indicators: string[];
+  resources: any[];
+  timestamp: string;
 }

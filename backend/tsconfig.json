@@ -10,33 +10,15 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": false,
-    "removeComments": true,
-    "noImplicitAny": false,
-    "strictNullChecks": false,
-    "strictFunctionTypes": false,
-    "noImplicitReturns": false,
-    "noFallthroughCasesInSwitch": false,
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "allowSyntheticDefaultImports": true
   },
   "include": [
-    "src/server-minimal.ts",
-    "src/types/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "src/config/**/*",
-    "src/interfaces/**/*",
-    "src/middleware/**/*",
-    "src/models/**/*",
-    "src/routes/**/*",
-    "src/services/**/*",
-    "src/utils/**/*",
-    "src/server.ts",
     "**/*.test.ts",
     "**/*.spec.ts"
   ]

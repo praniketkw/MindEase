@@ -1,437 +1,307 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
-  Typography,
   Paper,
+  Typography,
+  Button,
   Card,
   CardContent,
-  CardActions,
-  Button,
-  Grid,
-  Alert,
   Chip,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
+  Container,
+  Alert,
   Divider,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Link,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
 } from '@mui/material';
 import {
   Phone as PhoneIcon,
-  Chat as ChatIcon,
-  Web as WebIcon,
-  LocationOn as LocationIcon,
-  Schedule as ScheduleIcon,
-  LocalHospital as EmergencyIcon,
-  Close as CloseIcon,
-  ExpandMore as ExpandMoreIcon,
-  Favorite as HeartIcon,
-  Psychology as MindIcon,
-  Group as GroupIcon,
+  Message as MessageIcon,
+  Language as LanguageIcon,
   LocalHospital as HospitalIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
-import { CrisisSupportProps, EmergencyResource } from '../interfaces/components';
 
-const CrisisSupportPage: React.FC<CrisisSupportProps> = ({
-  isVisible,
+interface CrisisSupportPageProps {
+  isVisible: boolean;
+  onClose: () => void;
+  emergencyResources?: any[];
+  onContactResource?: (resource: any) => void;
+}
+
+const CrisisSupportPage: React.FC<CrisisSupportPageProps> = ({
   onClose,
-  emergencyResources,
-  onContactResource,
 }) => {
-  const [selectedResource, setSelectedResource] = useState<EmergencyResource | null>(null);
-  const [showContactDialog, setShowContactDialog] = useState(false);
-
-  // Default emergency resources if none provided
-  const defaultResources: EmergencyResource[] = [
+  const resources = [
     {
       name: '988 Suicide & Crisis Lifeline',
-      phone: '988',
-      website: 'https://988lifeline.org',
+      contact: 'Call or Text 988',
       description: '24/7 free and confidential support for people in distress, prevention and crisis resources.',
-      availability: '24/7',
-      location: 'United States',
+      available: '24/7',
+      icon: <PhoneIcon />,
+      color: '#dc2626',
+      action: 'tel:988',
     },
     {
       name: 'Crisis Text Line',
-      phone: 'Text HOME to 741741',
-      website: 'https://www.crisistextline.org',
-      description: 'Free, 24/7 support for those in crisis. Text with a trained crisis counselor.',
-      availability: '24/7',
-      location: 'United States, Canada, UK',
+      contact: 'Text HOME to 741741',
+      description: 'Free 24/7 support via text message. Trained crisis counselors available immediately.',
+      available: '24/7',
+      icon: <MessageIcon />,
+      color: '#2563eb',
+      action: 'sms:741741',
     },
     {
-      name: 'National Alliance on Mental Illness',
-      phone: '1-800-950-NAMI (6264)',
-      website: 'https://www.nami.org',
-      description: 'Information, referrals, and support for individuals and families affected by mental illness.',
-      availability: 'Mon-Fri 10am-10pm ET',
-      location: 'United States',
+      name: 'International Crisis Lines',
+      contact: 'Find Your Country',
+      description: 'Crisis centers and hotlines available worldwide in multiple languages.',
+      available: '24/7',
+      icon: <LanguageIcon />,
+      color: '#059669',
+      action: 'https://www.iasp.info/resources/Crisis_Centres/',
     },
     {
-      name: 'International Association for Suicide Prevention',
-      phone: 'Various by country',
-      website: 'https://www.iasp.info/resources/Crisis_Centres',
-      description: 'Directory of crisis centers and helplines worldwide.',
-      availability: 'Varies by location',
-      location: 'International',
+      name: 'Emergency Services',
+      contact: 'Call 911',
+      description: 'For immediate life-threatening emergencies. Police, fire, and medical assistance.',
+      available: '24/7',
+      icon: <HospitalIcon />,
+      color: '#ea580c',
+      action: 'tel:911',
     },
   ];
 
-  const resources = emergencyResources.length > 0 ? emergencyResources : defaultResources;
-
-  const handleContactResource = (resource: EmergencyResource) => {
-    setSelectedResource(resource);
-    setShowContactDialog(true);
-    onContactResource(resource);
-  };
-
-  const handlePhoneCall = (phone: string) => {
-    window.open(`tel:${phone}`, '_self');
-  };
-
-  const handleWebsiteOpen = (website: string) => {
-    window.open(website, '_blank', 'noopener,noreferrer');
-  };
-
-  const getResourceIcon = (name: string) => {
-    if (name.toLowerCase().includes('suicide') || name.toLowerCase().includes('crisis')) {
-      return <EmergencyIcon color="error" />;
+  const handleResourceClick = (action: string) => {
+    if (action.startsWith('http')) {
+      window.open(action, '_blank');
+    } else {
+      window.location.href = action;
     }
-    if (name.toLowerCase().includes('text')) {
-      return <ChatIcon color="primary" />;
-    }
-    if (name.toLowerCase().includes('hospital')) {
-      return <HospitalIcon color="error" />;
-    }
-    return <MindIcon color="primary" />;
   };
-
-  const copingStrategies = [
-    {
-      title: 'Immediate Grounding Techniques',
-      strategies: [
-        '5-4-3-2-1 Technique: Name 5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste',
-        'Deep breathing: Breathe in for 4 counts, hold for 4, breathe out for 6',
-        'Cold water on your face or hold ice cubes',
-        'Listen to calming music or nature sounds',
-      ],
-    },
-    {
-      title: 'Reach Out for Support',
-      strategies: [
-        'Call a trusted friend or family member',
-        'Contact your therapist or counselor',
-        'Visit a local emergency room if in immediate danger',
-        'Use the crisis resources listed above',
-      ],
-    },
-    {
-      title: 'Self-Care Activities',
-      strategies: [
-        'Take a warm shower or bath',
-        'Go for a walk in nature',
-        'Practice gentle stretching or yoga',
-        'Write in a journal about your feelings',
-      ],
-    },
-  ];
 
   return (
-    <Box sx={{ maxWidth: '1200px', mx: 'auto', p: 2 }}>
-      {/* Emergency Alert Header */}
-      <Alert 
-        severity="error" 
-        sx={{ 
-          mb: 3, 
-          borderRadius: 2,
-          '& .MuiAlert-message': { width: '100%' }
-        }}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-              Crisis Support Resources
-            </Typography>
-            <Typography variant="body2">
-              If you're having thoughts of self-harm or suicide, please reach out for help immediately. You are not alone.
-            </Typography>
-          </Box>
-          {onClose && (
-            <IconButton onClick={onClose} sx={{ color: 'error.main' }}>
-              <CloseIcon />
-            </IconButton>
-          )}
-        </Box>
-      </Alert>
+    <Box
+      sx={{
+        minHeight: 'calc(100vh - 70px)',
+        bgcolor: '#f8f9fa',
+        py: 4,
+      }}
+    >
+      <Container maxWidth="md">
+        {/* Back Button */}
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={onClose}
+          sx={{
+            mb: 3,
+            color: '#64748b',
+            '&:hover': {
+              bgcolor: '#f1f5f9',
+            },
+          }}
+        >
+          Back to Chat
+        </Button>
 
-      <Grid container spacing={3}>
-        {/* Emergency Resources */}
-        <Grid item xs={12} md={8}>
-          <Paper elevation={1} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <EmergencyIcon color="error" />
-              Emergency Resources
-            </Typography>
-            
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              These resources are available 24/7 and provide immediate support during crisis situations.
-            </Typography>
-
-            <Grid container spacing={2}>
-              {resources.map((resource, index) => (
-                <Grid item xs={12} sm={6} key={index}>
-                  <Card 
-                    elevation={2}
-                    sx={{ 
-                      height: '100%',
-                      borderRadius: 2,
-                      border: '2px solid',
-                      borderColor: 'error.light',
-                      '&:hover': {
-                        borderColor: 'error.main',
-                        boxShadow: 4,
-                      },
-                    }}
-                  >
-                    <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2 }}>
-                        {getResourceIcon(resource.name)}
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', flex: 1 }}>
-                          {resource.name}
-                        </Typography>
-                      </Box>
-                      
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {resource.description}
-                      </Typography>
-                      
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                        <Chip
-                          icon={<ScheduleIcon />}
-                          label={resource.availability}
-                          size="small"
-                          color="success"
-                        />
-                        {resource.location && (
-                          <Chip
-                            icon={<LocationIcon />}
-                            label={resource.location}
-                            size="small"
-                            variant="outlined"
-                          />
-                        )}
-                      </Box>
-                    </CardContent>
-                    
-                    <CardActions sx={{ p: 2, pt: 0 }}>
-                      <Button
-                        variant="contained"
-                        color="error"
-                        startIcon={<PhoneIcon />}
-                        onClick={() => handlePhoneCall(resource.phone)}
-                        fullWidth
-                        sx={{ mb: 1 }}
-                      >
-                        {resource.phone}
-                      </Button>
-                      
-                      {resource.website && (
-                        <Button
-                          variant="outlined"
-                          startIcon={<WebIcon />}
-                          onClick={() => handleWebsiteOpen(resource.website!)}
-                          fullWidth
-                          size="small"
-                        >
-                          Visit Website
-                        </Button>
-                      )}
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Paper>
-
-          {/* Coping Strategies */}
-          <Paper elevation={1} sx={{ p: 3, borderRadius: 2 }}>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <HeartIcon color="primary" />
-              Immediate Coping Strategies
-            </Typography>
-            
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Try these techniques while waiting for professional help or when feeling overwhelmed.
-            </Typography>
-
-            {copingStrategies.map((category, index) => (
-              <Accordion key={index} sx={{ mb: 1, borderRadius: 1 }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    {category.title}
-                  </Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <List>
-                    {category.strategies.map((strategy, strategyIndex) => (
-                      <ListItem key={strategyIndex} sx={{ py: 0.5 }}>
-                        <ListItemIcon>
-                          <Chip label={strategyIndex + 1} size="small" color="primary" />
-                        </ListItemIcon>
-                        <ListItemText primary={strategy} />
-                      </ListItem>
-                    ))}
-                  </List>
-                </AccordionDetails>
-              </Accordion>
-            ))}
-          </Paper>
-        </Grid>
-
-        {/* Sidebar Information */}
-        <Grid item xs={12} md={4}>
-          {/* Warning Signs */}
-          <Card elevation={1} sx={{ mb: 3, borderRadius: 2 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                When to Seek Immediate Help
-              </Typography>
-              
-              <List dense>
-                <ListItem sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    <EmergencyIcon color="error" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Thoughts of self-harm or suicide" />
-                </ListItem>
-                
-                <ListItem sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    <EmergencyIcon color="error" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Feeling like you might hurt yourself or others" />
-                </ListItem>
-                
-                <ListItem sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    <EmergencyIcon color="error" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Severe panic or anxiety attacks" />
-                </ListItem>
-                
-                <ListItem sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    <EmergencyIcon color="error" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Feeling completely hopeless or trapped" />
-                </ListItem>
-              </List>
-            </CardContent>
-          </Card>
-
-          {/* Support Information */}
-          <Card elevation={1} sx={{ borderRadius: 2 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                Remember
-              </Typography>
-              
-              <List dense>
-                <ListItem sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    <HeartIcon color="primary" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="You are not alone"
-                    secondary="Many people care about you and want to help"
-                  />
-                </ListItem>
-                
-                <ListItem sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    <HeartIcon color="primary" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="This feeling will pass"
-                    secondary="Crisis situations are temporary"
-                  />
-                </ListItem>
-                
-                <ListItem sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    <HeartIcon color="primary" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Help is available"
-                    secondary="Professional support is just a call away"
-                  />
-                </ListItem>
-                
-                <ListItem sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    <HeartIcon color="primary" fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="You matter"
-                    secondary="Your life has value and meaning"
-                  />
-                </ListItem>
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Contact Confirmation Dialog */}
-      <Dialog
-        open={showContactDialog}
-        onClose={() => setShowContactDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          Contacting {selectedResource?.name}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            You're about to contact {selectedResource?.name}. This is a great step in getting the support you need.
-          </Typography>
-          
-          <Alert severity="info" sx={{ mb: 2 }}>
-            If this is a life-threatening emergency, please call 911 or go to your nearest emergency room immediately.
-          </Alert>
-          
-          <Typography variant="body2" color="text.secondary">
-            Remember: It's okay to ask for help. You're being brave by reaching out.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowContactDialog(false)}>
-            Close
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => {
-              if (selectedResource) {
-                handlePhoneCall(selectedResource.phone);
-              }
-              setShowContactDialog(false);
+        {/* Header */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 4,
+            mb: 3,
+            borderRadius: 3,
+            bgcolor: 'white',
+            border: '1px solid #e2e8f0',
+            textAlign: 'center',
+          }}
+        >
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 3,
+              boxShadow: '0 8px 24px rgba(220, 38, 38, 0.25)',
             }}
           >
-            Continue to Contact
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <HospitalIcon sx={{ fontSize: 40, color: 'white' }} />
+          </Box>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a202c', mb: 2 }}>
+            Crisis Support Resources
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#64748b', maxWidth: 600, mx: 'auto', lineHeight: 1.7 }}>
+            If you're in crisis or need immediate support, these resources are available 24/7.
+            You're not alone, and help is always available.
+          </Typography>
+        </Paper>
+
+        {/* Important Notice */}
+        <Alert
+          severity="error"
+          sx={{
+            mb: 3,
+            borderRadius: 2,
+            border: '1px solid #fecaca',
+            '& .MuiAlert-icon': {
+              fontSize: 28,
+            },
+          }}
+        >
+          <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+            If you're in immediate danger, call 911 or your local emergency number.
+          </Typography>
+          <Typography variant="body2">
+            These services are free, confidential, and staffed by trained professionals who care.
+          </Typography>
+        </Alert>
+
+        {/* Resources Grid */}
+        <Box sx={{ display: 'grid', gap: 2, mb: 4 }}>
+          {resources.map((resource, index) => (
+            <Card
+              key={index}
+              elevation={0}
+              sx={{
+                borderRadius: 3,
+                border: '1px solid #e2e8f0',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                  <Box
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 2,
+                      backgroundColor: resource.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      flexShrink: 0,
+                      boxShadow: `0 4px 14px ${resource.color}40`,
+                    }}
+                  >
+                    {resource.icon}
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a202c' }}>
+                        {resource.name}
+                      </Typography>
+                      <Chip
+                        label={resource.available}
+                        size="small"
+                        sx={{
+                          height: 22,
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          bgcolor: '#dcfce7',
+                          color: '#166534',
+                          border: '1px solid #bbf7d0',
+                        }}
+                      />
+                    </Box>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: resource.color,
+                        fontWeight: 700,
+                        mb: 1,
+                        fontSize: '1rem',
+                      }}
+                    >
+                      {resource.contact}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b', mb: 2, lineHeight: 1.6 }}>
+                      {resource.description}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleResourceClick(resource.action)}
+                      sx={{
+                        bgcolor: resource.color,
+                        color: 'white',
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        px: 3,
+                        boxShadow: 'none',
+                        '&:hover': {
+                          bgcolor: resource.color,
+                          filter: 'brightness(0.9)',
+                          boxShadow: 'none',
+                        },
+                      }}
+                    >
+                      Contact Now
+                    </Button>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+
+        {/* Additional Information */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 4,
+            borderRadius: 3,
+            bgcolor: 'white',
+            border: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a202c', mb: 2 }}>
+            What to Expect When You Call
+          </Typography>
+          <Divider sx={{ mb: 3 }} />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#1a202c', mb: 0.5 }}>
+                • You'll speak with a trained counselor
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#64748b', pl: 2, lineHeight: 1.6 }}>
+                All counselors are trained to listen and provide support without judgment.
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#1a202c', mb: 0.5 }}>
+                • Your call is confidential
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#64748b', pl: 2, lineHeight: 1.6 }}>
+                What you share stays private unless you're in immediate danger.
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#1a202c', mb: 0.5 }}>
+                • They're there to help, not judge
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#64748b', pl: 2, lineHeight: 1.6 }}>
+                Crisis counselors are compassionate professionals who want to support you.
+              </Typography>
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Footer Message */}
+        <Box sx={{ textAlign: 'center', mt: 4, p: 3, bgcolor: '#f1f5f9', borderRadius: 3 }}>
+          <Typography variant="body1" sx={{ color: '#1a202c', fontWeight: 600, mb: 1 }}>
+            Remember: Reaching out for help is a sign of strength, not weakness.
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#64748b' }}>
+            You matter, and your life has value. Help is available.
+          </Typography>
+        </Box>
+      </Container>
     </Box>
   );
 };

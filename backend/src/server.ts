@@ -1,163 +1,104 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import { authMiddleware } from './middleware/auth.middleware';
-import { errorHandler, notFoundHandler, timeoutHandler } from './middleware/error.middleware';
-import { getSecurityConfig, getHelmetConfig, getRouteSecurityHeaders } from './config/security.config';
-import logger, { httpLogger } from './config/logging.config';
-import { conversationRoutes } from './routes/conversation.routes';
-import { journalRoutes } from './routes/journal.routes';
-import { userRoutes } from './routes/user.routes';
-import copingStrategyRoutes from './routes/coping-strategy.routes';
-import checkInRoutes from './routes/check-in.routes';
+import chatRoutes from './routes/chat.routes';
+import healthRoutes from './routes/health.routes';
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Get security configuration
-const securityConfig = getSecurityConfig();
-const routeSecurityHeaders = getRouteSecurityHeaders();
-
-// Trust proxy for accurate IP addresses (required for Azure Static Web Apps)
-app.set('trust proxy', 1);
-
-// Request timeout middleware
-app.use(timeoutHandler(30000)); // 30 second timeout
-
-// HTTP request logging
-app.use(httpLogger);
-
 // Security middleware
-app.use(getHelmetConfig());
-
-// CORS configuration
-app.use(cors({
-  origin: securityConfig.corsOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Request-ID'],
-  exposedHeaders: ['X-RateLimit-Remaining', 'X-RateLimit-Reset']
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
 }));
 
-// General rate limiting
-app.use(securityConfig.rateLimiting.general);
+// CORS configuration
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', limiter);
 
-// Health check endpoint (no authentication required)
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
-  });
+// Body parsing
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Request logging
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.path}`);
+  next();
 });
 
-// API status endpoint (no authentication required)
-app.get('/api/status', (req, res) => {
-  res.status(200).json({
-    status: 'operational',
-    timestamp: new Date().toISOString(),
-    services: {
-      database: 'operational',
-      ai_services: 'operational'
-    }
-  });
-});
-
-// Authentication middleware for protected routes
-app.use('/api', authMiddleware);
-
-// Apply route-specific security headers and rate limiting
-app.use('/api/chat', routeSecurityHeaders.api, securityConfig.rateLimiting.conversation);
-app.use('/api/voice', routeSecurityHeaders.voice, securityConfig.rateLimiting.voice);
-app.use('/api/journal', routeSecurityHeaders.journal, securityConfig.rateLimiting.journal);
-
-// API routes
-app.use('/api/chat', conversationRoutes);
-app.use('/api/voice', conversationRoutes);
-app.use('/api/journal', journalRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/coping-strategies', copingStrategyRoutes);
-app.use('/api/check-in', checkInRoutes);
+// Routes
+app.use('/health', healthRoutes);
+app.use('/api/chat', chatRoutes);
 
 // 404 handler
-app.use('*', notFoundHandler);
+app.use((req: Request, res: Response) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: 'The requested resource does not exist',
+    path: req.path,
+  });
+});
 
-// Global error handler
-app.use(errorHandler);
+// Error handler
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
+  });
+});
 
 // Start server
-async function startServer() {
-  try {
-    // Create logs directory if it doesn't exist (for production)
-    if (process.env.NODE_ENV === 'production') {
-      const fs = require('fs');
-      const path = require('path');
-      const logsDir = path.join(process.cwd(), 'logs');
-      if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir, { recursive: true });
-      }
-    }
-
-    const server = app.listen(PORT, () => {
-      logger.info(`🚀 MindEase Backend Server started`, {
-        port: PORT,
-        environment: process.env.NODE_ENV,
-        nodeVersion: process.version,
-        timestamp: new Date().toISOString()
-      });
-      
-      console.log(`🚀 MindEase Backend Server running on port ${PORT}`);
-      console.log(`📊 Health check available at http://localhost:${PORT}/health`);
-      console.log(`🔒 Enhanced security measures enabled`);
-      console.log(`⚡ Rate limiting configured for different endpoints`);
-      console.log(`📝 Structured logging enabled`);
-    });
-
-    // Set server timeout
-    server.timeout = 30000; // 30 seconds
-
-    return server;
-  } catch (error) {
-    logger.error('❌ Failed to start server:', error);
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
-  }
-}
+const server = app.listen(PORT, () => {
+  console.log(`🚀 MindEase Backend Server running on port ${PORT}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`🔒 Security: Helmet, CORS, Rate Limiting enabled`);
+  console.log(`🤖 AI: Anthropic Claude 3.5 Haiku (fast & affordable)`);
+  console.log(`🔐 Privacy: No conversation storage, client-side only`);
+  console.log(`💰 Cost: ~$0.0001 per conversation`);
+});
 
 // Graceful shutdown
-const gracefulShutdown = (signal: string) => {
-  logger.info(`🛑 ${signal} received, shutting down gracefully`);
-  console.log(`🛑 ${signal} received, shutting down gracefully`);
-  
-  // Close server and cleanup resources
-  process.exit(0);
-};
-
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-  console.error('Uncaught Exception:', error);
-  process.exit(1);
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
-
-startServer();
 
 export default app;
