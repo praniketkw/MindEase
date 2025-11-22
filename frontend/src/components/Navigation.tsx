@@ -11,6 +11,9 @@ import {
   ListItemIcon,
   ListItemText,
   Chip,
+  Divider,
+  List,
+  ListItemButton,
 } from '@mui/material';
 import {
   Chat as ChatIcon,
@@ -19,22 +22,36 @@ import {
   DeleteForever as ClearIcon,
   Info as InfoIcon,
   Psychology as PsychologyIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
+import { Conversation } from '../types/conversation';
 
 interface NavigationProps {
   currentPage: string;
   onNavigate: (page: string) => void;
   unreadNotifications?: number;
   userProfile: any;
-  onClearHistory?: () => void;
+  conversations: Conversation[];
+  activeConversationId: string | null;
+  onNewConversation: () => void;
+  onSwitchConversation: (conversationId: string) => void;
+  onDeleteConversation: (conversationId: string) => void;
+  onClearAllHistory: () => void;
 }
 
 const Navigation: React.FC<NavigationProps> = ({
   currentPage,
   onNavigate,
-  onClearHistory,
+  conversations,
+  activeConversationId,
+  onNewConversation,
+  onSwitchConversation,
+  onDeleteConversation,
+  onClearAllHistory,
 }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [conversationsAnchorEl, setConversationsAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -44,11 +61,32 @@ const Navigation: React.FC<NavigationProps> = ({
     setAnchorEl(null);
   };
 
-  const handleClearHistoryClick = () => {
+  const handleConversationsMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setConversationsAnchorEl(event.currentTarget);
+  };
+
+  const handleConversationsMenuClose = () => {
+    setConversationsAnchorEl(null);
+  };
+
+  const handleNewConversationClick = () => {
+    handleConversationsMenuClose();
+    onNewConversation();
+  };
+
+  const handleSwitchConversation = (conversationId: string) => {
+    handleConversationsMenuClose();
+    onSwitchConversation(conversationId);
+  };
+
+  const handleDeleteConversation = (conversationId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    onDeleteConversation(conversationId);
+  };
+
+  const handleClearAllHistoryClick = () => {
     handleMenuClose();
-    if (onClearHistory) {
-      onClearHistory();
-    }
+    onClearAllHistory();
   };
 
   const handleAboutClick = () => {
@@ -94,16 +132,28 @@ const Navigation: React.FC<NavigationProps> = ({
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Tooltip title="Chat" arrow>
+          <Tooltip title="Conversations" arrow>
             <IconButton
-              onClick={() => onNavigate('chat')}
+              onClick={handleConversationsMenuOpen}
               sx={{
-                color: currentPage === 'chat' ? '#6366f1' : '#64748b',
-                bgcolor: currentPage === 'chat' ? '#eef2ff' : 'transparent',
+                color: '#64748b',
                 '&:hover': { bgcolor: '#f1f5f9' },
               }}
             >
               <ChatIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="New Conversation" arrow>
+            <IconButton
+              onClick={onNewConversation}
+              sx={{
+                color: '#6366f1',
+                bgcolor: '#eef2ff',
+                '&:hover': { bgcolor: '#e0e7ff' },
+              }}
+            >
+              <AddIcon />
             </IconButton>
           </Tooltip>
 
@@ -128,6 +178,66 @@ const Navigation: React.FC<NavigationProps> = ({
           </Tooltip>
 
           <Menu
+            anchorEl={conversationsAnchorEl}
+            open={Boolean(conversationsAnchorEl)}
+            onClose={handleConversationsMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{
+              sx: {
+                mt: 1,
+                borderRadius: 2,
+                minWidth: 300,
+                maxHeight: 400,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '1px solid #e2e8f0',
+              },
+            }}
+          >
+            <MenuItem onClick={handleNewConversationClick}>
+              <ListItemIcon>
+                <AddIcon fontSize="small" sx={{ color: '#6366f1' }} />
+              </ListItemIcon>
+              <ListItemText>New Conversation</ListItemText>
+            </MenuItem>
+            <Divider />
+            <List dense sx={{ py: 0 }}>
+              {conversations.map((conv) => (
+                <ListItemButton
+                  key={conv.id}
+                  selected={conv.id === activeConversationId}
+                  onClick={() => handleSwitchConversation(conv.id)}
+                  sx={{
+                    py: 1,
+                    '&.Mui-selected': {
+                      bgcolor: '#eef2ff',
+                    },
+                  }}
+                >
+                  <ListItemText
+                    primary={conv.title}
+                    secondary={new Date(conv.lastActive).toLocaleDateString()}
+                    primaryTypographyProps={{
+                      noWrap: true,
+                      fontSize: '0.875rem',
+                    }}
+                    secondaryTypographyProps={{
+                      fontSize: '0.75rem',
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleDeleteConversation(conv.id, e)}
+                    sx={{ ml: 1 }}
+                  >
+                    <DeleteIcon fontSize="small" sx={{ color: '#dc2626' }} />
+                  </IconButton>
+                </ListItemButton>
+              ))}
+            </List>
+          </Menu>
+
+          <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
@@ -143,11 +253,11 @@ const Navigation: React.FC<NavigationProps> = ({
               },
             }}
           >
-            <MenuItem onClick={handleClearHistoryClick}>
+            <MenuItem onClick={handleClearAllHistoryClick}>
               <ListItemIcon>
                 <ClearIcon fontSize="small" sx={{ color: '#dc2626' }} />
               </ListItemIcon>
-              <ListItemText>Clear History</ListItemText>
+              <ListItemText>Clear All History</ListItemText>
             </MenuItem>
             <MenuItem onClick={handleAboutClick}>
               <ListItemIcon>
