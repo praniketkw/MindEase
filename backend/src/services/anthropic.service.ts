@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { config } from '../config';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -10,7 +11,7 @@ export class AnthropicService {
   private model: string = 'claude-3-5-haiku-20241022';
 
   constructor() {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = config.anthropicApiKey;
     
     if (!apiKey) {
       throw new Error('ANTHROPIC_API_KEY is not configured');
